@@ -1,0 +1,13 @@
+# python lib
+setuptools==59.5.0
+loguru
+numpy
+einops
+tqdm
+tabulate
+scikit-image
+scipy
+tensorboard
+torch==1.9.0
+torchvision==0.10.0
+timm==0.4.12
