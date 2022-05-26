@@ -43,7 +43,7 @@ class Exp(BaseExp):
         self.seed = 0
         self.exp_name = os.path.splitext(os.path.realpath(__file__).split("playground/")[-1])[0]
         self.encoder_arch = "vit_tiny"
-        self.dataset = "SSL_ImageNet_nori"
+        self.dataset = "SSL_ImageNet"
         self.transform = "ssl_transform"
         self.enable_tensorboard = True
 

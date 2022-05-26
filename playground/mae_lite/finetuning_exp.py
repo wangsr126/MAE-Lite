@@ -19,7 +19,7 @@ class Exp(BaseExp):
         self.global_pool = True
 
         # dataset & model
-        self.dataset = "ImageNet_nori"
+        self.dataset = "ImageNet"
         self.encoder_arch = "vit_tiny_patch16"
         self.img_size = 224
 
