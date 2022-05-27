@@ -11,6 +11,7 @@ from timm.utils import ModelEmaV2
 
 from mae_lite.exps.timm_imagenet_exp import Exp as BaseExp
 from mae_lite.layers import build_lr_scheduler
+from models_mae import *
 
 
 class MAE(nn.Module):

@@ -15,6 +15,7 @@ from torchvision.datasets.folder import default_loader
 from torchvision.datasets.utils import download_url
 from torchvision.datasets.utils import extract_archive
 from ..registry import DATASETS
+from mae_lite.utils import get_root_dir
 
 
 @DATASETS.register()
@@ -40,7 +41,7 @@ class Cars(VisionDataset):
 
     def __init__(self, train=True, transform=None, target_transform=None, root=None, download=True):
         if root is None:
-            root = "data/cars"
+            root = os.path.join(get_root_dir(), "data/cars")
         super(Cars, self).__init__(root, transform=transform, target_transform=target_transform)
 
         self.num_classes = 196

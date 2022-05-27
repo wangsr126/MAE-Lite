@@ -21,6 +21,7 @@ from torchvision.datasets.vision import VisionDataset
 from torchvision.datasets.utils import download_url
 from torchvision.datasets.utils import extract_archive
 from ..registry import DATASETS
+from mae_lite.utils import get_root_dir
 
 
 @DATASETS.register()
@@ -34,7 +35,7 @@ class Flowers(VisionDataset):
         download=True,
     ):
         if root is None:
-            root = "data/flowers"
+            root = os.path.join(get_root_dir(), "data/flowers")
         super(Flowers, self).__init__(root, transform=transform, target_transform=target_transform)
 
         base_folder = root

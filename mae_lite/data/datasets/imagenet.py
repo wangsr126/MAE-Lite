@@ -5,13 +5,17 @@
 ImageNet Datasets. 
 https://www.image-net.org/
 """
+import os.path as osp
 from torchvision.datasets import ImageFolder
 from ..registry import DATASETS
+from mae_lite.utils import get_root_dir
 
 
 @DATASETS.register()
 class SSL_ImageNet(ImageFolder):
-    def __init__(self, transform=None, root="data/imagenet/imagenet_train", target_transform=None, is_valid_file=None):
+    def __init__(self, transform=None, root=None, target_transform=None, is_valid_file=None):
+        if root is None:
+            root = osp.join(get_root_dir(), "data/imagenet/imagenet_train")
         super(SSL_ImageNet, self).__init__(
             root, transform=transform, target_transform=target_transform, is_valid_file=is_valid_file
         )
@@ -44,7 +48,10 @@ class SSL_ImageNet(ImageFolder):
 @DATASETS.register()
 class ImageNet(ImageFolder):
     def __init__(self, train, transform=None):
-        root = "data/imagenet/imagenet_{}".format("train" if train else "val")
+        root = osp.join(
+            get_root_dir(),
+            "data/imagenet/imagenet_{}".format("train" if train else "val")
+        )
         super(ImageNet, self).__init__(root, transform=transform)
         self.transform = transform
 

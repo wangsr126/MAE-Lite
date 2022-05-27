@@ -5,14 +5,16 @@
 CIFAR10/100 Datasets. 
 https://www.cs.toronto.edu/~kriz/cifar.html
 """
+import os.path as osp
 import torchvision.datasets as datasets
+from mae_lite.utils import get_root_dir
 from ..registry import DATASETS
 
 
 @DATASETS.register()
 class CIFAR10(datasets.CIFAR10):
     def __init__(self, train, transform=None):
-        root = "data/cifar"
+        root = osp.join(get_root_dir(), "data/cifar")
         super().__init__(root, train, transform=transform, target_transform=None, download=True)
         self.num_classes = 10
 
@@ -20,7 +22,7 @@ class CIFAR10(datasets.CIFAR10):
 @DATASETS.register()
 class CIFAR100(datasets.CIFAR100):
     def __init__(self, train, transform=None):
-        root = "data/cifar"
+        root = osp.join(get_root_dir(), "data/cifar")
         super().__init__(root, train, transform=transform, target_transform=None, download=True)
         self.num_classes = 100
 

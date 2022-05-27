@@ -7,6 +7,7 @@ from .datasets.cifar import CIFAR10, CIFAR100
 from .datasets.fgvc_aircraft import Aircraft
 from .datasets.oxford_flowers import Flowers
 from .datasets.oxford_pets import Pets
+from .datasets.stanford_cars import Cars
 
 from .transforms import ssl_transform, typical_imagenet_transform, timm_transform
 from .registry import DATASETS

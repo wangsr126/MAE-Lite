@@ -4,7 +4,7 @@
 # flake8: noqa F401, F403
 from .cuda import Scaler, NativeScaler
 from .checkpoint import save_checkpoint
-from .env import collect_env_info
+from .env import collect_env_info, get_root_dir
 from .log import setup_logger, setup_tensorboard_logger
 from .misc import accuracy, AvgMeter, DataPrefetcher, DictAction, random_seed
 from .registry import Registry

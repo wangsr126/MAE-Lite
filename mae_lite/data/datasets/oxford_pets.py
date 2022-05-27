@@ -18,6 +18,7 @@ from ..registry import DATASETS
 from torchvision.datasets.vision import VisionDataset
 from torchvision.datasets.utils import download_url
 from torchvision.datasets.utils import extract_archive
+from mae_lite.utils import get_root_dir
 
 
 @DATASETS.register()
@@ -31,7 +32,7 @@ class Pets(VisionDataset):
         download: bool = True,
     ) -> None:
         if root is None:
-            root = "data/pets"
+            root = os.path.join(get_root_dir(), "data/pets")
         super(Pets, self).__init__(root, transform=transform, target_transform=target_transform)
 
         base_folder = root

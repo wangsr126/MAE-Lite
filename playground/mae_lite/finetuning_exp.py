@@ -9,6 +9,7 @@ from util.lr_decay import create_optimizer, LayerDecayValueAssigner
 from mae_lite.exps.timm_imagenet_exp import Exp as BaseExp, Model
 from mae_lite.layers import build_lr_scheduler
 from loguru import logger
+from mae_lite.models.models_vit import *
 
 
 class Exp(BaseExp):
@@ -20,7 +21,6 @@ class Exp(BaseExp):
 
         # dataset & model
         self.dataset = "ImageNet"
-        self.encoder_arch = "vit_tiny_patch16"
         self.img_size = 224
 
         # optimizer
@@ -54,6 +54,7 @@ class Exp(BaseExp):
         self.drop_path = 0.1
         self.attn_drop_rate = 0.0
         # self.drop_block = None
+        self.encoder_arch = "vit_tiny_patch16"
 
         # self.num_workers = 10
         self.weights_prefix = "model"
@@ -105,7 +106,7 @@ class Exp(BaseExp):
                 logger.info("Assigned values = %s" % str(assigner.values))
 
             skip_weight_decay_list = self.get_model().model.no_weight_decay()
-            logger.info("Skip weight decay list: ", skip_weight_decay_list)
+            logger.info("Skip weight decay list: {}".format(skip_weight_decay_list))
 
             self.optimizer = create_optimizer(
                 self,

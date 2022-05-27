@@ -22,6 +22,9 @@ import timm.models.vision_transformer
 from timm.models.registry import register_model
 
 
+__all__ = ["vit_tiny_patch16", "vit_base_patch16", "vit_large_patch16", "vit_huge_patch14"]
+
+
 class VisionTransformer(timm.models.vision_transformer.VisionTransformer):
     """Vision Transformer with support for global average pooling and distillation"""
 

@@ -15,6 +15,7 @@ from torchvision.datasets.folder import default_loader
 from torchvision.datasets.utils import download_url
 from torchvision.datasets.utils import extract_archive
 from ..registry import DATASETS
+from mae_lite.utils import get_root_dir
 
 
 @DATASETS.register()
@@ -44,7 +45,7 @@ class Aircraft(VisionDataset):
         self, train=True, transform=None, target_transform=None, root=None, class_type="variant", download=True
     ):
         if root is None:
-            root = "data/fgvc_aircraft"
+            root = os.path.join(get_root_dir(), "data/fgvc_aircraft")
         super(Aircraft, self).__init__(root, transform=transform, target_transform=target_transform)
         split = "trainval" if train else "test"
         if split not in self.splits:
