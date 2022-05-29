@@ -138,11 +138,13 @@ class Exp(BaseExp):
         )
         return scheduler
 
-    def set_current_state(self, current_step):
+    def set_current_state(self, current_step, ckpt_path=None):
         if current_step == 0:
             # load pretrain ckpt
-            assert self.pretrain_exp_name is not None, "Please provide a valid 'pretrain_exp_name'!"
-            ckpt_path = os.path.join(self.output_dir, self.pretrain_exp_name, "last_epoch_ckpt.pth.tar")
+            if ckpt_path is None:
+                assert self.pretrain_exp_name is not None, "Please provide a valid 'pretrain_exp_name'!"
+                ckpt_path = os.path.join(self.output_dir, self.pretrain_exp_name, "last_epoch_ckpt.pth.tar")
+            logger.info("Load pretrained checkpoints from {}.".format(ckpt_path))
             msg = self.set_model_weights(ckpt_path, map_location="cpu")
             logger.info("Model params {} are not loaded".format(msg.missing_keys))
             logger.info("State-dict params {} are not used".format(msg.unexpected_keys))

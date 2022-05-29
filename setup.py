@@ -23,6 +23,7 @@ setup(
     entry_points={
         "console_scripts": [
             "ssl_train=mae_lite.tools.train:main",
+            "ssl_eval=mae_lite.tools.eval:main",
         ]
     },
     # cmdclass={"build_ext": torch.utils.cpp_extension.BuildExtension},

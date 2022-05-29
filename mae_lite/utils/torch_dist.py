@@ -34,10 +34,21 @@ def set_unittest_seed(seed=1):
     torch.backends.cudnn.deterministic = True
 
 
-def reduce_tensor_sum(tensor):
-    rt = tensor.clone()
-    dist.all_reduce(rt, op=dist.ReduceOp.SUM)
-    return rt
+def all_reduce_mean(x):
+    world_size = get_world_size()
+    if world_size > 1:
+        if not isinstance(x, torch.Tensor):
+            x_reduce = torch.tensor(x).cuda()
+            dist.all_reduce(x_reduce)
+            x_reduce /= world_size
+            return x_reduce.item()
+        else:
+            x_reduce = x.clone().cuda()
+            dist.all_reduce(x_reduce)
+            x_reduce /= world_size
+            return x_reduce
+    else:
+        return x
 
 
 def configure_nccl():

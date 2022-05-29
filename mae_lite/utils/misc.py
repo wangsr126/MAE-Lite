@@ -8,12 +8,14 @@ from argparse import Action
 import torch
 import random
 import numpy as np
+import torch.backends.cudnn as cudnn
 
 
 def random_seed(seed, rank):
     random.seed(seed + rank)
     np.random.seed(seed + rank)
     torch.manual_seed(seed + rank)
+    cudnn.benchmark = True
 
 
 def accuracy(output, target, topk=(1,)):

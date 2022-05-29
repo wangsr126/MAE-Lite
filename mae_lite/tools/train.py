@@ -11,13 +11,12 @@ import torch
 
 import math
 from contextlib import suppress
-import torch.backends.cudnn as cudnn
 import torch.distributed as dist
 import torch.multiprocessing as mp
 import torch.utils.data.distributed
 from torch.nn.parallel import DistributedDataParallel as DDP
 
-from mae_lite.tools.eval_only import run_eval
+from mae_lite.tools.eval import run_eval
 from mae_lite.utils import (
     TORCH_VERSION,
     DictAction,
@@ -31,7 +30,7 @@ from mae_lite.utils import (
     NativeScaler,
     random_seed,
 )
-from mae_lite.utils.torch_dist import parse_devices, configure_nccl, synchronize
+from mae_lite.utils.torch_dist import parse_devices, configure_nccl, all_reduce_mean, synchronize
 from mae_lite.exps import timm_imagenet_exp
 
 
@@ -173,7 +172,8 @@ def main_worker(gpu, nr_gpu, args):
         tb_writer = None
 
     data_loader = exp.get_data_loader()
-    train_loader, eval_loader = data_loader["train"], data_loader["eval"]
+    train_loader = data_loader["train"]
+    eval_loader = data_loader.get("eval", None)
     active_eval = args.eval and eval_loader is not None
     model = exp.get_model()
     if rank == 0:
@@ -185,8 +185,6 @@ def main_worker(gpu, nr_gpu, args):
     model.cuda(gpu)
     if nr_gpu > 1:
         model = DDP(model, device_ids=[gpu])
-
-    cudnn.benchmark = True
 
     # ------------------------ start training ------------------------------------------------------------ #
     ITERS_PER_EPOCH = len(train_loader)
@@ -264,7 +262,8 @@ def main_worker(gpu, nr_gpu, args):
             optimizer.zero_grad()
             with autocast():
                 loss, extra_dict = model(inps, target=target)
-            loss_value = loss.item()
+            loss_value = all_reduce_mean(loss).item()
+            extra_dict = {k: all_reduce_mean(v) for k, v in extra_dict.items()} if extra_dict else None
             if not math.isfinite(loss_value):
                 logger.warning("Loss is {:.4f}, Stop training".format(loss_value))
                 sys.exit(1)
@@ -314,7 +313,7 @@ def main_worker(gpu, nr_gpu, args):
         if active_eval:
             if (epoch + 1) % exp.eval_interval == 0:
                 model.eval()
-                eval_top1, eval_top5 = run_eval(model, eval_loader, nr_gpu > 1)
+                eval_top1, eval_top5 = run_eval(model, eval_loader)
                 if rank == 0:
                     logger.info(
                         "\tEval-Epoch: [{}/{}], Top1:{:.3f}, Top5:{:.3f}".format(

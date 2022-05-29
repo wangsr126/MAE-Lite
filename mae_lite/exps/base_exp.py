@@ -69,7 +69,7 @@ class BaseExp(metaclass=ABCMeta):
     def get_lr_scheduler(self, **kwargs) -> LRScheduler:
         pass
 
-    def set_current_state(self, current_step):
+    def set_current_state(self, current_step, **kwargs):
         pass
 
     def update(self, options: dict) -> str:
