@@ -61,6 +61,8 @@ class Model(nn.Module):
             self.ema_model = ModelEmaV2(
                 self.model, decay=args.model_ema_decay, device="cpu" if args.model_ema_force_cpu else None
             )
+            for p in self.ema_model.parameters():
+                p.requires_grad = False
         else:
             self.ema_model = None
 
@@ -125,7 +127,7 @@ class Exp(BaseExp):
         self.epochs = max_epoch
         self.epoch_repeats = 0
         self.start_epoch = None  #
-        self.decay_epoch = None
+        self.decay_epochs = None
         self.warmup_epochs = 3
         self.cooldown_epochs = 10
         self.patience_epochs = 10
@@ -280,7 +282,7 @@ class TimmLRScheduler(LRScheduler):
         super(TimmLRScheduler, self).__init__(optimizer, _Scheduler(0.0, 1), interval)
 
     def step(self, count):
-        count, inner_count = divmod(iter, self.interval)
+        count, inner_count = divmod(count, self.interval)
         if inner_count == 0:
             self.scheduler_timm.step(count)
 

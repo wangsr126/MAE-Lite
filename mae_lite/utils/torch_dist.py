@@ -56,10 +56,24 @@ def configure_nccl():
 
     It is required for multi-machine training.
     """
-    # os.environ["NCCL_SOCKET_IFNAME"] = "ib0"
+    # # os.environ["NCCL_SOCKET_IFNAME"] = "ib0"
+    # os.environ["NCCL_IB_DISABLE"] = "1"
+
+    # os.environ["NCCL_LAUNCH_MODE"] = "PARALLEL"
+    # os.environ["NCCL_IB_HCA"] = subprocess.getoutput(
+    #     "cd /sys/class/infiniband/ > /dev/null; for i in mlx5_*; "
+    #     "do cat $i/ports/1/gid_attrs/types/* 2>/dev/null "
+    #     "| grep v >/dev/null && echo $i ; done; > /dev/null"
+    # )
+    # os.environ["NCCL_IB_GID_INDEX"] = "3"
+    # os.environ["NCCL_IB_TC"] = "106"
+
+    # resource.setrlimit(resource.RLIMIT_NOFILE, (65536, 65536))
+    ifname = filter(lambda x: x not in ("lo",), os.listdir("/sys/class/net/"))
+    os.environ["NCCL_SOCKET_IFNAME"] = ",".join(ifname)
     os.environ["NCCL_IB_DISABLE"] = "1"
 
-    os.environ["NCCL_LAUNCH_MODE"] = "PARALLEL"
+    # os.environ["NCCL_LAUNCH_MODE"] = "PARALLEL"
     os.environ["NCCL_IB_HCA"] = subprocess.getoutput(
         "cd /sys/class/infiniband/ > /dev/null; for i in mlx5_*; "
         "do cat $i/ports/1/gid_attrs/types/* 2>/dev/null "
@@ -67,7 +81,6 @@ def configure_nccl():
     )
     os.environ["NCCL_IB_GID_INDEX"] = "3"
     os.environ["NCCL_IB_TC"] = "106"
-
     resource.setrlimit(resource.RLIMIT_NOFILE, (65536, 65536))
 
 

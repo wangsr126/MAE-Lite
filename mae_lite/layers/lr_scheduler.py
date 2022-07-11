@@ -21,7 +21,9 @@ class _Scheduler:
         self._get_lr = self._get_lr_func()
 
     def _get_lr_func(self):
-        raise NotImplementedError
+        def _get_lr(count):
+            raise NotImplementedError
+        return _get_lr
 
     def __call__(self, count):
         return self._get_lr(count)
