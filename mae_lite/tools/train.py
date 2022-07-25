@@ -335,7 +335,8 @@ def main_worker(gpu, nr_gpu, args):
                         tb_writer.add_scalar("Val/Top5", eval_top5, (epoch + 1) * ITERS_PER_EPOCH)
 
         # ----------------------------------------- dump weights ----------------------------------- #
-        if rank == 0 and (is_best or (epoch + 1) % exp.dump_interval == 0):
+        if rank == 0 and (is_best or (epoch + 1) % exp.dump_interval == 0 or (epoch + 1) == exp.max_epoch):
+            exp.before_save_checkpoint()
             ckpt = {
                 "start_epoch": epoch + 1,
                 "model": model.state_dict(),
@@ -344,14 +345,9 @@ def main_worker(gpu, nr_gpu, args):
                 "best_top1": BEST_TOP1_ACC,
                 "best_top5": BEST_TOP5_ACC,
                 "best_top1_epoch": BEST_TOP1_EPOCH,
+                "scaler": scaler.state_dict()
             }
-            ckpt["scaler"] = scaler.state_dict()
-            save_checkpoint(
-                ckpt,
-                is_best,
-                file_name,
-                "last_epoch",
-            )
+            save_checkpoint(ckpt, is_best, file_name, "last_epoch")
 
     # ---------------------------------------- end of the training -------------------------------- #
     if rank == 0:

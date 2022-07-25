@@ -72,6 +72,9 @@ class BaseExp(metaclass=ABCMeta):
     def set_current_state(self, current_step, **kwargs):
         pass
 
+    def before_save_checkpoint(self):
+        pass
+
     def update(self, options: dict) -> str:
         if options is None:
             return ""
