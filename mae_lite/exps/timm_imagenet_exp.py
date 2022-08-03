@@ -99,6 +99,7 @@ class Exp(BaseExp):
         self.std = None
         self.interpolation = ""
         self.validation_batch_size = None
+        self.validation_dataset = None
 
         # optimizer
         self.opt = "sgd"
@@ -206,7 +207,7 @@ class Exp(BaseExp):
     def get_data_loader(self):
         if "data_loader" not in self.__dict__:
             dataset_train = build_dataset(self.dataset, True)
-            dataset_eval = build_dataset(self.dataset, False)
+            dataset_eval = build_dataset(self.validation_dataset if self.validation_dataset else self.dataset, False)
 
             batch_size_per_gpu = self.batch_size // dist.get_world_size()
             data_config = resolve_data_config(vars(self), model=self.get_model().model, verbose=dist.is_main_process())

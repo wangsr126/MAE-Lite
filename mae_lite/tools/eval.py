@@ -167,7 +167,7 @@ def main_worker(gpu, nr_gpu, args):
         logger.warning("State-dict params {} are not used".format(msg.unexpected_keys))
 
     model.eval()
-    eval_top1, eval_top5 = run_eval(model, eval_loader, nr_gpu > 1)
+    eval_top1, eval_top5 = run_eval(model, eval_loader)
     if rank == 0:
         logger.info("Evaluation of experiment: {} is done.".format(exp.exp_name))
         logger.info(

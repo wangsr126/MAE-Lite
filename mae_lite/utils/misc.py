@@ -24,11 +24,11 @@ def accuracy(output, target, topk=(1,)):
 
     _, pred = output.topk(maxk, 1, True, True)
     pred = pred.t()
-    correct = pred.eq(target.reshape(1, -1).expand_as(pred))
+    correct = pred.reshape(maxk, batch_size, 1).eq(target.reshape(1, batch_size, -1)).any(dim=-1)
 
     res = []
     for k in topk:
-        correct_k = correct[:k].reshape(-1).float().sum(0)
+        correct_k = correct[:k].any(0).float().sum()
         res.append(correct_k.mul_(100.0 / batch_size))
     return res
 
@@ -197,3 +197,10 @@ class DictAction(Action):
             key, val = kv.split("=", maxsplit=1)
             options[key] = self._parse_iterable(val)
         setattr(namespace, self.dest, options)
+
+
+if __name__ == "__main__":
+    import torch
+    output = torch.tensor([[3,2,1],[3,1,2],[1,2,3]])
+    target = torch.tensor([[0,1],[1,2],[1,-1]])
+    accuracy(output, target, (1, 2))
