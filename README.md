@@ -1,5 +1,5 @@
 # MAE-lite
-A Closer Look at Self-supervised Lightweight Vision Transformers [[paper]]()
+A Closer Look at Self-supervised Lightweight Vision Transformers [[paper]](https://arxiv.org/abs/2205.14443)
 
 ## Install
 ```bash
