@@ -29,6 +29,7 @@ from mae_lite.utils import (
     Scaler,
     NativeScaler,
     random_seed,
+    find_free_port
 )
 from mae_lite.utils.torch_dist import parse_devices, configure_nccl, all_reduce_mean, synchronize
 from mae_lite.exps import timm_imagenet_exp
@@ -38,7 +39,7 @@ def get_arg_parser():
     parser = argparse.ArgumentParser("Training")
     # distributed
     parser.add_argument("--dist-backend", default="nccl", type=str, help="distributed backend")
-    parser.add_argument("--dist-url", default=None, type=str, help="url used to set up distributed training")
+    parser.add_argument("--dist-url", default=None, type=str, help="url used to set up distributed training, e.g. 'tcp://127.0.0.1:8686'.")
     parser.add_argument("-b", "--batch-size", type=int, default=1024, help="batch size")
     parser.add_argument("-e", "--max_epoch", type=int, default=None, help="max_epoch for training")
     parser.add_argument("-d", "--devices", default="0-7", type=str, help="device for training")
@@ -79,10 +80,33 @@ def main():
     args.devices = parse_devices(args.devices)
     os.environ["CUDA_VISIBLE_DEVICES"] = args.devices
     nr_gpu = len(args.devices.split(","))
-
     nr_machine = int(os.getenv("MACHINE_TOTAL", "1"))
-    if nr_gpu > 1:
-        args.world_size = nr_gpu * nr_machine
+    args.world_size = nr_gpu * nr_machine
+
+    configure_nccl()
+    if args.world_size > 1:
+        if args.dist_url is None:
+            master_ip = subprocess.check_output(["hostname", "--fqdn"]).decode("utf-8")
+            port = find_free_port()
+            master_ip = str(master_ip).strip()
+            args.dist_url = "tcp://{}:{}".format(master_ip, port)
+            # print(args.dist_url)
+
+            # ------------------------hack for multi-machine training -------------------- #
+            if nr_machine > 1:
+                current_exp_name = os.path.basename(args.exp_file).split(".")[0]
+                ip_add_file = "./" + current_exp_name + "ip_add.txt"
+                if rank == 0:
+                    with open(ip_add_file, "w") as ip_add:
+                        ip_add.write(args.dist_url)
+                else:
+                    while not os.path.exists(ip_add_file):
+                        time.sleep(0.5)
+
+                    with open(ip_add_file, "r") as ip_add:
+                        dist_url = ip_add.readline()
+                    args.dist_url = dist_url
+            
         processes = []
         for rank in range(nr_gpu):
             p = mp.Process(target=main_worker, args=(rank, nr_gpu, args))
@@ -95,46 +119,22 @@ def main():
 
 
 def main_worker(gpu, nr_gpu, args):
-    current_exp_name = os.path.basename(args.exp_file).split(".")[0]
-    # ------------ set environment variables for distributed training ------------------------------------- #
-    configure_nccl()
     rank = gpu
-    if nr_gpu > 1:
+    if args.world_size > 1:
         rank += int(os.getenv("MACHINE_RANK", "0")) * nr_gpu
-
-        if args.dist_url is None:
-            master_ip = subprocess.check_output(["hostname", "--fqdn"]).decode("utf-8")
-            master_ip = str(master_ip).strip()
-            args.dist_url = "tcp://{}:23456".format(master_ip)
-
-            # ------------------------hack for multi-machine training -------------------- #
-            if args.world_size > 8:
-                ip_add_file = "./" + current_exp_name + "ip_add.txt"
-                if rank == 0:
-                    with open(ip_add_file, "w") as ip_add:
-                        ip_add.write(args.dist_url)
-                else:
-                    while not os.path.exists(ip_add_file):
-                        time.sleep(0.5)
-
-                    with open(ip_add_file, "r") as ip_add:
-                        dist_url = ip_add.readline()
-                    args.dist_url = dist_url
-        else:
-            args.dist_url = "tcp://{}:23456".format(args.dist_url)
-
         dist.init_process_group(
             backend=args.dist_backend,
             init_method=args.dist_url,
             world_size=args.world_size,
             rank=rank,
         )
-        print("Rank {} initialization finished.".format(rank))
         synchronize()
 
         if rank == 0:
+            current_exp_name = os.path.basename(args.exp_file).split(".")[0]
             if os.path.exists("./" + current_exp_name + "ip_add.txt"):
                 os.remove("./" + current_exp_name + "ip_add.txt")
+        print("Rank {} initialization finished.".format(rank))
 
     sys.path.insert(0, os.path.dirname(args.exp_file))
     current_exp = importlib.import_module(os.path.basename(args.exp_file).split(".")[0])

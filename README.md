@@ -60,7 +60,7 @@ Please refer to [MOCOV3.md](playground/mocov3/MOCOV3.md)
 |---|---|---|---|---|---|---|
 | - | - | - | [Default](finetuning_exp.py) | 300 | 74.5 | [ckpt](https://drive.google.com/file/d/1LADxJTuwTUBUXYGUQC9wCKJTRK4UtSl3/view?usp=sharing) |
 |  |  |  | [Distillation](finetuning_distill_exp.py) | 300/1000 | 75.9/77.8 | [ckpt](https://drive.google.com/file/d/1VTnKD8y_iMaN5CQwv-MWv90AWfOP-fGp/view?usp=sharing)/[ckpt](https://drive.google.com/file/d/1LejpOPaNFziUJQYzVYroTuhlrCzXasQG/view?usp=sharing) |
-|  |  |  | [Improved](finetuning_impr_exp.py) | 300 | 76.1 | [ckpt](https://drive.google.com/file/d/1QLd78alsaXHrilsvNFatbF0S8kDjTCWP/view?usp=sharing) |
+|  |  |  | [Improved](finetuning_impr_exp.py) | 300 | 75.8 | [ckpt](https://drive.google.com/file/d/1QLd78alsaXHrilsvNFatbF0S8kDjTCWP/view?usp=sharing) |
 | [mae_lite](mae_lite_exp.py) | 400 | ~40h | - | - | - | [ckpt](https://drive.google.com/file/d/1Fc8mui-dgR35hNOynWTo1gyRWw76DmPe/view?usp=sharing) |
 |  |  |  | [Default](finetuning_exp.py) | 300 | 76.1 | [ckpt](https://drive.google.com/file/d/1jV9EaTbIxHqWNEnEWiqQG6vjT_VpT_py/view?usp=sharing) |
 |  |  |  | [Distillation](finetuning_distill_exp.py) | 300/1000 | 76.9/78.4 | [ckpt](https://drive.google.com/file/d/13Wyzv7XYqxBG4az6307rXccRiP5Cbh2P/view?usp=sharing)/[ckpt](https://drive.google.com/file/d/1PoGl4QYnVpZjFnexgG4ZJkzYksDsS8Tj/view?usp=sharing) |
