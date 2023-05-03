@@ -5,6 +5,7 @@
 from .datasets.imagenet import SSL_ImageNet, ImageNet
 from .datasets.cifar import CIFAR10, CIFAR100
 from .datasets.fgvc_aircraft import Aircraft
+from .datasets.inaturalist import INatDataset
 from .datasets.oxford_flowers import Flowers
 from .datasets.oxford_pets import Pets
 from .datasets.stanford_cars import Cars

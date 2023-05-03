@@ -61,6 +61,7 @@ def get_arg_parser():
     parser.add_argument(
         "--resume", dest="resume", nargs="?", default=argparse.SUPPRESS, type=str, help="path to latest checkpoint"
     )
+    parser.add_argument("--ckpt", default=None, type=str, help="checkpoint for initialization")
     parser.add_argument("--amp", action="store_true", help="enable automatic mixed precision training")
     parser.add_argument(
         "--exp-options",
@@ -233,7 +234,7 @@ def main_worker(gpu, nr_gpu, args):
             )
         else:
             raise FileNotFoundError("\tno checkpoint found at '{}'".format(args.resume))
-    exp.set_current_state(start_epoch * ITERS_PER_EPOCH)
+    exp.set_current_state(start_epoch * ITERS_PER_EPOCH, ckpt_path=args.ckpt)
     #  ---------------------------------- train ------------------------------ #
     if rank == 0:
         logger.info("Training start...")

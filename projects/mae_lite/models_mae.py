@@ -9,21 +9,19 @@
 # timm: https://github.com/rwightman/pytorch-image-models/tree/master/timm
 # DeiT: https://github.com/facebookresearch/deit
 # --------------------------------------------------------
-import os, sys
 from functools import partial
 
 import torch
 import torch.nn as nn
 
 from timm.models.vision_transformer import PatchEmbed
-from timm.models import register_model
-from models_vit_distill import Block
+from mae_lite.models.models_vit import Block
 
-sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 from util.pos_embed import get_2d_sincos_pos_embed
+from timm.models import register_model
 
 
-class MaskedAutoencoderViTDistill(nn.Module):
+class MaskedAutoencoderViT(nn.Module):
     """Masked Autoencoder with VisionTransformer backbone"""
 
     def __init__(
@@ -35,20 +33,19 @@ class MaskedAutoencoderViTDistill(nn.Module):
         depth=24,
         num_heads=16,
         decoder_embed_dim=512,
+        decoder_pred_dim=None,
         decoder_depth=8,
         decoder_num_heads=16,
-        decoder_pred_dim=None,
         mlp_ratio=4.0,
         norm_layer=nn.LayerNorm,
         norm_pix_loss=False,
     ):
         super().__init__()
-
-        # --------------------------------------------------------------------------
-        # MAE encoder specifics
         self.embed_dim = embed_dim
         self.depth = depth
         self.num_heads = num_heads
+        # --------------------------------------------------------------------------
+        # MAE encoder specifics
         self.patch_embed = PatchEmbed(img_size, patch_size, in_chans, embed_dim)
         num_patches = self.patch_embed.num_patches
 
@@ -65,7 +62,6 @@ class MaskedAutoencoderViTDistill(nn.Module):
 
         # --------------------------------------------------------------------------
         # MAE decoder specifics
-        self.decoder_embed_dim = decoder_embed_dim
         self.decoder_embed = nn.Linear(embed_dim, decoder_embed_dim, bias=True)
 
         self.mask_token = nn.Parameter(torch.zeros(1, 1, decoder_embed_dim))
@@ -80,7 +76,7 @@ class MaskedAutoencoderViTDistill(nn.Module):
                 for i in range(decoder_depth)
             ]
         )
-
+        self.decoder_embed_dim = decoder_embed_dim
         self.decoder_norm = norm_layer(decoder_embed_dim)
         decoder_pred_dim = patch_size ** 2 * in_chans if decoder_pred_dim is None else decoder_pred_dim
         self.decoder_pred = nn.Linear(decoder_embed_dim, decoder_pred_dim, bias=True)  # encoder to decoder
@@ -179,7 +175,7 @@ class MaskedAutoencoderViTDistill(nn.Module):
 
         return x_masked, mask, ids_restore, ids_shuffle
 
-    def forward_encoder(self, x, mask_ratio, ids_shuffle=None, with_hidden=False, with_attn=False):
+    def forward_encoder(self, x, mask_ratio, ids_shuffle=None):
         # embed patches
         x = self.patch_embed(x)
 
@@ -194,22 +190,14 @@ class MaskedAutoencoderViTDistill(nn.Module):
         cls_tokens = cls_token.expand(x.shape[0], -1, -1)
         x = torch.cat((cls_tokens, x), dim=1)
 
-        hiddens = []
-        attns = []
         # apply Transformer blocks
         for blk in self.blocks:
-            x, hidden, attn = blk(x, with_hidden=with_hidden, with_attn=with_attn)
-            hiddens.append(hidden)
-            attns.append(attn)
+            x = blk(x)
         x = self.norm(x)
-        if with_hidden:
-            hiddens.append(x)
-        else:
-            hiddens.append(None)
 
-        return x, mask, ids_restore, ids_shuffle, hiddens, attns
+        return x, mask, ids_restore, ids_shuffle
 
-    def forward_decoder(self, x, ids_restore, with_hidden=False, with_attn=False):
+    def forward_decoder(self, x, ids_restore):
         # embed tokens
         x = self.decoder_embed(x)
 
@@ -222,18 +210,10 @@ class MaskedAutoencoderViTDistill(nn.Module):
         # add pos embed
         x = x + self.decoder_pos_embed
 
-        hiddens = []
-        attns = []
         # apply Transformer blocks
         for blk in self.decoder_blocks:
-            x, hidden, attn = blk(x, with_hidden=with_hidden, with_attn=with_attn)
-            hiddens.append(hidden)
-            attns.append(attn)
+            x = blk(x)
         x = self.decoder_norm(x)
-        if with_hidden:
-            hiddens.append(x)
-        else:
-            hiddens.append(None)
 
         # predictor projection
         x = self.decoder_pred(x)
@@ -241,7 +221,7 @@ class MaskedAutoencoderViTDistill(nn.Module):
         # remove cls token
         x = x[:, 1:, :]
 
-        return x, hiddens, attns
+        return x
 
     def forward_loss(self, imgs, pred, mask):
         """
@@ -261,18 +241,17 @@ class MaskedAutoencoderViTDistill(nn.Module):
         loss = (loss * mask).sum() / mask.sum()  # mean loss on removed patches
         return loss
 
-    def forward(self, imgs, mask_ratio=0.75, ids_shuffle=None, with_hidden=False, with_attn=False):
-        latent, mask, ids_restore, ids_shuffle, hiddens, attns = self.forward_encoder(
-            imgs, mask_ratio, ids_shuffle, with_hidden=with_hidden, with_attn=with_attn
-        )
-        pred, _, _ = self.forward_decoder(latent, ids_restore)  # [N, L, p*p*3]
+    def forward(self, imgs, mask_ratio=0.75, ids_shuffle=None):
+        latent, mask, ids_restore, ids_shuffle = self.forward_encoder(imgs, mask_ratio, ids_shuffle)
+        pred = self.forward_decoder(latent, ids_restore)  # [N, L, p*p*3]
         loss = self.forward_loss(imgs, pred, mask)
-        return loss, pred, mask, ids_shuffle, hiddens, attns
+        return loss, pred, mask, ids_shuffle
 
 
 @register_model
-def mae_vit_tiny_patch16_distill(pretrained=False, **kwargs):
-    model = MaskedAutoencoderViTDistill(
+def mae_vit_tiny_patch16(pretrained=False, **kwargs):
+    # the number of heads is changed to 12 from 3, which is different to the original arch.
+    model = MaskedAutoencoderViT(
         patch_size=16,
         embed_dim=192,
         depth=12,
@@ -288,8 +267,26 @@ def mae_vit_tiny_patch16_distill(pretrained=False, **kwargs):
 
 
 @register_model
-def mae_vit_base_patch16_distill(pretrained=False, **kwargs):
-    model = MaskedAutoencoderViTDistill(
+def mae_vit_small_patch16(pretrained=False, **kwargs):
+    # the number of heads is changed to 12 from 6, which is different to the original arch.
+    model = MaskedAutoencoderViT(
+        patch_size=16,
+        embed_dim=384,
+        depth=12,
+        num_heads=12,
+        decoder_embed_dim=192,
+        decoder_depth=1,
+        decoder_num_heads=6,
+        mlp_ratio=4,
+        norm_layer=partial(nn.LayerNorm, eps=1e-6),
+        **kwargs
+    )
+    return model
+
+
+@register_model
+def mae_vit_base_patch16(pretrained=False, **kwargs):
+    model = MaskedAutoencoderViT(
         patch_size=16,
         embed_dim=768,
         depth=12,
@@ -305,8 +302,8 @@ def mae_vit_base_patch16_distill(pretrained=False, **kwargs):
 
 
 @register_model
-def mae_vit_large_patch16_distill(pretrained=False, **kwargs):
-    model = MaskedAutoencoderViTDistill(
+def mae_vit_large_patch16(pretrained=False, **kwargs):
+    model = MaskedAutoencoderViT(
         patch_size=16,
         embed_dim=1024,
         depth=24,
@@ -322,8 +319,8 @@ def mae_vit_large_patch16_distill(pretrained=False, **kwargs):
 
 
 @register_model
-def mae_vit_huge_patch14_distill(pretrained=False, **kwargs):
-    model = MaskedAutoencoderViTDistill(
+def mae_vit_huge_patch14(pretrained=False, **kwargs):
+    model = MaskedAutoencoderViT(
         patch_size=14,
         embed_dim=1280,
         depth=32,

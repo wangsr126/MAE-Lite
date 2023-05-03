@@ -1,11 +1,11 @@
 # --------------------------------------------------------
 # Copyright (c) 2022 Megvii, Inc. and its affiliates. All Rights Reserved.
 # --------------------------------------------------------
-from finetuning_exp import Exp as BaseExp
+from finetuning_mae_exp import Exp as BaseExp
 
 
 class Exp(BaseExp):
-    def __init__(self, batch_size, max_epoch=100):
+    def __init__(self, batch_size, max_epoch=300):
         super(Exp, self).__init__(batch_size, max_epoch)
 
         # optimizer
@@ -25,7 +25,7 @@ class Exp(BaseExp):
         self.weights_prefix = "model"
         # self.print_interval = 10
         # self.enable_tensorboard = True
-        self.save_folder_prefix = "ft_impr_"
+        self.save_folder_prefix = "ft_"
 
 
 if __name__ == "__main__":

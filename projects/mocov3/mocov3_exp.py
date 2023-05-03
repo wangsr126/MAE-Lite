@@ -115,5 +115,5 @@ class Exp(BaseExp):
         )
         return scheduler
 
-    def set_current_state(self, current_step):
+    def set_current_state(self, current_step, **kwargs):
         self.get_model().set_current_state(current_step)

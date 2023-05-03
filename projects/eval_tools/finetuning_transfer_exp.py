@@ -3,12 +3,12 @@
 # --------------------------------------------------------
 import os
 import torch
-from finetuning_exp import Exp as BaseExp
+from finetuning_mae_exp import Exp as BaseExp
 from loguru import logger
 
 
 class Exp(BaseExp):
-    def __init__(self, batch_size, max_epoch=100):
+    def __init__(self, batch_size, max_epoch=300):
         super(Exp, self).__init__(batch_size, max_epoch)
         self.layer_decay = 0.75
         self.global_pool = True
@@ -45,7 +45,7 @@ class Exp(BaseExp):
         self.eval_interval = 10
 
     def set_model_weights(self, ckpt_path, map_location="cpu"):
-        BLACK_LIST = ["head.weight", "head.bias"]
+        BLACK_LIST = ("head", )
 
         def _match(key):
             return any([k in key for k in BLACK_LIST])
@@ -58,7 +58,7 @@ class Exp(BaseExp):
         ckpt = torch.load(ckpt_path, map_location="cpu")
         weights_prefix = self.weights_prefix
         if not weights_prefix:
-            state_dict = {"model." + k: v for k, v in ckpt["model"].items()}
+            state_dict = {"model." + k: v for k, v in ckpt["model"].items() if not _match(k)}
         else:
             if weights_prefix and not weights_prefix.endswith("."):
                 weights_prefix += "."

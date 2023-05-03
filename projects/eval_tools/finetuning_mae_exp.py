@@ -10,6 +10,7 @@ from mae_lite.exps.timm_imagenet_exp import Exp as BaseExp, Model
 from mae_lite.layers import build_lr_scheduler
 from loguru import logger
 from mae_lite.models.models_vit import *
+from models_vit_rpe import *
 
 
 class Exp(BaseExp):
@@ -61,7 +62,7 @@ class Exp(BaseExp):
         # self.print_interval = 10
         # self.enable_tensorboard = True
         self.pretrain_exp_name = None
-        self.save_folder_prefix = "ft_"
+        self.save_folder_prefix = "ft_mae_"
 
     @property
     def exp_name(self):

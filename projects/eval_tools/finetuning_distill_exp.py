@@ -4,7 +4,7 @@
 import torch
 import torch.nn.functional as F
 from timm.models import create_model
-from finetuning_exp import Exp as BaseExp
+from finetuning_mae_exp import Exp as BaseExp
 from mae_lite.exps.timm_imagenet_exp import Model as BaseModel
 
 
@@ -68,7 +68,7 @@ class ModelDistill(BaseModel):
 
 
 class Exp(BaseExp):
-    def __init__(self, batch_size, max_epoch=100):
+    def __init__(self, batch_size, max_epoch=300):
         super(Exp, self).__init__(batch_size, max_epoch)
 
         # distill
