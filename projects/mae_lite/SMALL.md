@@ -1,49 +1,49 @@
-# Experiments on ViT-Small
+## Experiments on ViT-Small
 
-## Pretraining
+### Pre-Training
 ```bash
-# 4096 batch-sizes on 8xV100 GPUs:
+# 4096 batch-sizes on 8 GPUs:
 cd projects/mae_lite
 ssl_train -b 4096 -d 0-7 -e 400 -f mae_lite_exp.py --amp \
 --exp-options exp_name=mae_lite/mae_small_400e encoder_arch=mae_vit_small_patch16
 ```
 
-## Fine-tuning on ImageNet
+### Fine-Tuning on ImageNet
 Please download the pre-trained models, *e.g.*, 
 
-download [MAE-Small](https://drive.google.com/file/d/16polFU68dOe4YrmpgL9I1ekStzFG8XV5/view?usp=sharing) to `{BASE_FOLDER}/checkpoints/mae_small_400e.pth.tar`
+download [MAE-Small](https://drive.google.com/file/d/16polFU68dOe4YrmpgL9I1ekStzFG8XV5/view?usp=sharing) to `<BASE_FOLDER>/checkpoints/mae_small_400e.pth.tar`
 
-### Fine-tuning with the improved recipe:
+Then, fine-tune the pre-trained model:
 
 ```bash
-# 1024 batch-sizes on 8xV100 GPUs:
+# 1024 batch-sizes on 8 GPUs:
 cd projects/eval_tools
 ssl_train -b 1024 -d 0-7 -e 300 -f finetuning_exp.py --amp \
---ckpt $CKPT --exp-options pretrain_exp_name=mae_lite/mae_small_400e \
+[--ckpt <checkpoint-path>] --exp-options pretrain_exp_name=mae_lite/mae_small_400e \
 layer_decay=0.75 reprob=0.0 smoothing=0.0 encoder_arch=vit_small_patch16 color_jitter=0.3
 ```
-- `CKPT`: if set to "{BASE_FOLDER}/checkpoints/mae_small_400e.pth.tar", it will be loaded as initialization; If not set, the checkpoint at "{BASE_FOLDER}/outputs/mae_lite/mae_small_400e/last_epoch_ckpt.pth.tar" will be loaded automatically.
+- `<checkpoint-path>`: if set to `<BASE_FOLDER>/checkpoints/mae_small_400e.pth.tar`, it will be loaded as initialization; If not set, the checkpoint at `<BASE_FOLDER>/outputs/mae_lite/mae_small_400e/last_epoch_ckpt.pth.tar` will be loaded automatically.
 
-## Pre-training with Distillation
-### Preparation
-Download the teacher [MAE-Base](https://drive.google.com/file/d/1SPTjHIvw-yTOmw2ll-9cCiVyqR8NdPrX/view?usp=sharing) to `{BASE_FOLDER}/checkpoints/mae_base_1600e.pth.tar`
-### Pre-training
+### Pre-training with Distillation
+**Preparation**
+
+Download the teacher [MAE-Base](https://drive.google.com/file/d/1SPTjHIvw-yTOmw2ll-9cCiVyqR8NdPrX/view?usp=sharing) to `<BASE_FOLDER>/checkpoints/mae_base_1600e.pth.tar`
+
+**Pre-Training**
 ```bash
-# 4096 batch-sizes on 8xV100 GPUs:
+# 4096 batch-sizes on 8 GPUs:
 cd projects/mae_lite
 ssl_train -b 4096 -f mae_lite_distill_exp.py --amp --exp-options \
-teacher_ckpt_path=$CKPT_PATH exp_name=mae_lite/mae_small_distill_400e encoder_arch=mae_vit_small_patch16
+teacher_ckpt_path="<BASE_FOLDER>/checkpoints/mae_base_1600e.pth.tar" exp_name=mae_lite/mae_small_distill_400e encoder_arch=mae_vit_small_patch16
 ```
-- `$CKPT_PATH`: `{BASE_FOLDER}/checkpoints/mae_base_1600e.pth.tar`
-### Fine-tuning
 
-download [D-MAE-Small](https://drive.google.com/file/d/1-O7uuEnRrgKobETv54Z5T4isdS_WXOmK/view?usp=sharing) to `{BASE_FOLDER}/checkpoints/mae_small_distill_400e.pth.tar`
+**Fine-Tuning**
 
 ```bash
-# 1024 batch-sizes on 8xV100 GPUs:
+# 1024 batch-sizes on 8 GPUs:
 cd projects/eval_tools
 ssl_train -b 1024 -d 0-7 -e 300 -f finetuning_exp.py --amp \
---ckpt $CKPT --exp-options pretrain_exp_name=mae_lite/mae_small_distill_400e \
+[--ckpt <checkpoint-path>] --exp-options pretrain_exp_name=mae_lite/mae_small_distill_400e \
 layer_decay=0.75 reprob=0.0 smoothing=0.0 encoder_arch=vit_small_patch16 color_jitter=0.3
 ```
 

@@ -1,24 +1,21 @@
-# Pre-training with Distillation
+## Pre-Training with Distillation
 
-## Preparation
-Download the teacher [MAE-Base](https://drive.google.com/file/d/1SPTjHIvw-yTOmw2ll-9cCiVyqR8NdPrX/view?usp=sharing) to `{BASE_FOLDER}/checkpoints/mae_base_1600e.pth.tar`
+### Preparation
+Download the teacher [MAE-Base](https://drive.google.com/file/d/1SPTjHIvw-yTOmw2ll-9cCiVyqR8NdPrX/view?usp=sharing) to `<BASE_FOLDER>/checkpoints/mae_base_1600e.pth.tar`
 
-## Pre-training
+### Pre-Training
 ```bash
-# 4096 batch-sizes on 8xV100 GPUs:
+# 4096 batch-sizes on 8 GPUs:
 cd projects/mae_lite
 ssl_train -b 4096 -f mae_lite_distill_exp.py --amp --exp-options \
-teacher_ckpt_path=$CKPT_PATH exp_name=mae_lite/mae_tiny_distill_400e
+teacher_ckpt_path="<BASE_FOLDER>/checkpoints/mae_base_1600e.pth.tar" exp_name=mae_lite/mae_tiny_distill_400e
 ```
-- `$CKPT_PATH`: `{BASE_FOLDER}/checkpoints/mae_base_1600e.pth.tar`
 
-## Fine-tuning
-download [D-MAE-Tiny](https://drive.google.com/file/d/1OCDMUEdcPhwoCPWGN0kahsHST7tbQmFe/view?usp=sharing) to `{BASE_FOLDER}/checkpoints/mae_tiny_distill_400e.pth.tar`
-
+### Fine-Tuning
 ```bash
-# 1024 batch-sizes on 8x2080 GPUs:
+# 1024 batch-sizes on 8 GPUs:
 cd projects/eval_tools
-ssl_train -b 1024 -f finetuning_exp.py --amp --ckpt $CKPT \
+ssl_train -b 1024 -f finetuning_exp.py --amp [--ckpt <checkpoint-path>] \
 --exp-options pretrain_exp_name=mae_lite/mae_tiny_distill_400e
 ```
 
