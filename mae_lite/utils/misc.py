@@ -199,6 +199,13 @@ class DictAction(Action):
         setattr(namespace, self.dest, options)
 
 
+def remove_possible_prefix(state_dict):
+    if all(key.startswith("module.") for key in state_dict.keys()):
+        return {k.replace("module.", ""): v for k, v in state_dict.items()}
+    else:
+        return state_dict
+
+
 if __name__ == "__main__":
     import torch
     output = torch.tensor([[3,2,1],[3,1,2],[1,2,3]])

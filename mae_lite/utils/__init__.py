@@ -6,7 +6,7 @@ from .cuda import Scaler, NativeScaler
 from .checkpoint import save_checkpoint
 from .env import collect_env_info, get_root_dir, find_free_port
 from .log import setup_logger, setup_tensorboard_logger
-from .misc import accuracy, AvgMeter, DataPrefetcher, DictAction, random_seed
+from .misc import accuracy, AvgMeter, DataPrefetcher, DictAction, random_seed, remove_possible_prefix
 from .registry import Registry
 
 

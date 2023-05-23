@@ -18,6 +18,7 @@ from mae_lite.utils import (
     setup_logger,
     collect_env_info,
     random_seed,
+    remove_possible_prefix,
 )
 from mae_lite.utils.torch_dist import parse_devices, configure_nccl, all_reduce_mean, synchronize
 
@@ -148,7 +149,9 @@ def main_worker(gpu, nr_gpu, args):
     torch.cuda.set_device(gpu)
     model.cuda(gpu)
     if nr_gpu > 1:
-        model = DDP(model, device_ids=[gpu])
+        ddp_model = DDP(model, device_ids=[gpu])
+    else:
+        ddp_model = model
 
     #  ------------------------------------------- load ckpt ------------------------------------ #
     # specify the path of the ckeckpoint for evaluation.
@@ -161,13 +164,13 @@ def main_worker(gpu, nr_gpu, args):
             ckpt_path = os.path.join(file_name, "last_epoch_ckpt.pth.tar")
             assert os.path.isfile(ckpt_path), "Failed to load ckpt from '{}'".format(ckpt_path)
     ckpt = torch.load(ckpt_path, map_location="cpu")
-    msg = model.load_state_dict(ckpt["model"])
+    msg = model.load_state_dict(remove_possible_prefix(ckpt["model"]))
     if rank == 0:
         logger.warning("Model params {} are not loaded".format(msg.missing_keys))
         logger.warning("State-dict params {} are not used".format(msg.unexpected_keys))
 
-    model.eval()
-    eval_top1, eval_top5 = run_eval(model, eval_loader)
+    ddp_model.eval()
+    eval_top1, eval_top5 = run_eval(ddp_model, eval_loader)
     if rank == 0:
         logger.info("Evaluation of experiment: {} is done.".format(exp.exp_name))
         logger.info(

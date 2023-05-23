@@ -63,7 +63,30 @@ ssl_train -b 1024 -d 0-7 -e 300 -f finetuning_exp.py --amp \
 ```
 - `<checkpoint-path>`: if set to `<BASE_FOLDER>/checkpoints/mae_tiny_400e.pth.tar`, it will be loaded as initialization; If not set, the checkpoint at `<BASE_FOLDER>/outputs/mae_lite/mae_tiny_400e/last_epoch_ckpt.pth.tar` will be loaded automatically.
 
-### Pre-training with Distillation
+### Evaluation of fine-tuned models
+download [MAE-Tiny-FT](https://drive.google.com/file/d/1VEpG2c5A62PefeecjQ3yaKfRlfph3LxO/view?usp=sharing) to `<BASE_FOLDER>/checkpoints/mae_tiny_400e_ft_300e.pth.tar`
+
+```bash
+# 1024 batch-sizes on 1 GPUs:
+python mae_lite/tools/eval.py -b 1024 -d 0 -f projects/eval_tools/finetuning_exp.py \
+--ckpt <BASE_FOLDER>/checkpoints/mae_tiny_400e_ft_300e.pth.tar \
+--exp-options pretrain_exp_name=mae_lite/mae_tiny_400e/ft_eval
+```
+
+And you will get `"Top1: 77.978"` if all right.
+
+download [MAE-Tiny-FT-RPE](https://drive.google.com/file/d/1zKDnMKs6tBTnC4liTYG2AMtotKcbKr4J/view?usp=sharing) to `<BASE_FOLDER>/checkpoints/mae_tiny_400e_ft_rpe_1000e.pth.tar`
+
+```bash
+# 1024 batch-sizes on 1 GPUs:
+python mae_lite/tools/eval.py -b 1024 -d 0 -f projects/eval_tools/finetuning_rpe_exp.py \
+--ckpt <BASE_FOLDER>/checkpoints/mae_tiny_400e_ft_rpe_1000e.pth.tar \
+--exp-options pretrain_exp_name=mae_lite/mae_tiny_400e/ft_rpe_eval
+```
+
+And you will get `"Top1: 79.002"` if all right.
+
+### Pre-Training with Distillation
 Please refer to [DISTILL.md](projects/mae_lite/DISTILL.md).
 
 ### Transfer to Other Datasets
@@ -83,7 +106,7 @@ Please refer to [VISUAL.md](projects/eval_tools/VISUAL.md).
 |---|---|---|---|---|---|
 | - | - | [impr.](projects/eval_tools/finetuning_exp.py) | 300 | 75.8 | [link](https://drive.google.com/file/d/1RvhE2HucdWYHhKmPfHQW2A4EPpCHSYN_/view?usp=sharing) |
 | [mae_lite](projects/mae_lite/mae_lite_exp.py) | 400 | - | - | - | [link](https://drive.google.com/file/d/1ZQYlvCPLZrJDqn2lp4GCIVL246WPqgEf/view?usp=sharing) |
-|  |  | [impr.](projects/eval_tools/finetuning_exp.py) | 300 | 78.1 | [link](https://drive.google.com/file/d/1VEpG2c5A62PefeecjQ3yaKfRlfph3LxO/view?usp=sharing) |
+|  |  | [impr.](projects/eval_tools/finetuning_exp.py) | 300 | 78.0 | [link](https://drive.google.com/file/d/1VEpG2c5A62PefeecjQ3yaKfRlfph3LxO/view?usp=sharing) |
 |  |  | [impr.+RPE](projects/eval_tools/finetuning_rpe_exp.py) | 1000 | **79.0** | [link](https://drive.google.com/file/d/1zKDnMKs6tBTnC4liTYG2AMtotKcbKr4J/view?usp=sharing) |
 | [mae_lite_distill](projects/mae_lite/mae_lite_distill_exp.py) | 400 | - | - | - | [link](https://drive.google.com/file/d/1OCDMUEdcPhwoCPWGN0kahsHST7tbQmFe/view?usp=sharing) |
 |  |  | [impr.](projects/eval_tools/finetuning_exp.py) | 300 | 78.4 | [link](https://drive.google.com/file/d/1bcxwRUx6fq38M9eoBQbP2thwtU0j_9u6/view?usp=sharing) |
