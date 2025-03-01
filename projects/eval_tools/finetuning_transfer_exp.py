@@ -3,7 +3,8 @@
 # --------------------------------------------------------
 import os
 import torch
-from finetuning_mae_exp import Exp as BaseExp
+from timm.models import create_model
+from finetuning_mae_exp import Exp as BaseExp, Model
 from loguru import logger
 
 
@@ -43,6 +44,46 @@ class Exp(BaseExp):
         self.encoder_arch = "vit_tiny_patch16"
         self.save_folder_prefix = "ft_cifar100_"
         self.eval_interval = 10
+
+        self.use_abs_pos_emb = True
+        self.use_rel_pos_bias = False
+        self.use_shared_rel_pos_bias = False
+        self.qkv_bias = True
+        self.qv_bias = True
+        self.init_values = None
+
+    def get_model(self):
+        if "model" not in self.__dict__:
+            if self.encoder_arch == 'vit_tiny_patch16_rpe':
+                encoder = create_model(
+                    self.encoder_arch,
+                    pretrained=self.pretrained,
+                    num_classes=self.num_classes,
+                    drop_rate=self.drop,
+                    drop_path_rate=self.drop_path,
+                    attn_drop_rate=self.attn_drop_rate,
+                    drop_block_rate=self.drop_block,
+                    global_pool=self.global_pool,
+                    use_abs_pos_emb=self.use_abs_pos_emb,
+                    use_rel_pos_bias=self.use_rel_pos_bias,
+                    use_shared_rel_pos_bias=self.use_shared_rel_pos_bias,
+                    init_values=self.init_values,
+                    qkv_bias=self.qkv_bias,
+                    qv_bias=self.qv_bias,
+                )
+            else:
+                encoder = create_model(
+                    self.encoder_arch,
+                    pretrained=self.pretrained,
+                    num_classes=self.num_classes,
+                    drop_rate=self.drop,
+                    drop_path_rate=self.drop_path,
+                    attn_drop_rate=self.attn_drop_rate,
+                    drop_block_rate=self.drop_block,
+                    global_pool=self.global_pool,
+                )
+            self.model = Model(self, encoder)
+        return self.model
 
     def set_model_weights(self, ckpt_path, map_location="cpu"):
         BLACK_LIST = ("head", )

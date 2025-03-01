@@ -2,6 +2,7 @@
 # Copyright (c) 2022 Megvii, Inc. and its affiliates. All Rights Reserved.
 # --------------------------------------------------------
 from finetuning_mae_exp import Exp as BaseExp
+from hiera import *
 
 
 class Exp(BaseExp):

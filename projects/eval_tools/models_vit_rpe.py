@@ -40,7 +40,7 @@ class Mlp(nn.Module):
 
 class Attention(nn.Module):
     def __init__(
-            self, dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0.,
+            self, dim, num_heads=8, qkv_bias=False, qv_bias=False, qk_scale=None, attn_drop=0.,
             proj_drop=0., window_size=None, attn_head_dim=None):
         super().__init__()
         self.num_heads = num_heads
@@ -50,13 +50,19 @@ class Attention(nn.Module):
         all_head_dim = head_dim * self.num_heads
         self.scale = qk_scale or head_dim ** -0.5
 
-        self.qkv = nn.Linear(dim, all_head_dim * 3, bias=False)
-        if qkv_bias:
-            self.q_bias = nn.Parameter(torch.zeros(all_head_dim))
-            self.v_bias = nn.Parameter(torch.zeros(all_head_dim))
-        else:
+        if not qkv_bias:
+            self.qkv = nn.Linear(dim, all_head_dim * 3, bias=False)
             self.q_bias = None
             self.v_bias = None
+        else:
+            if qv_bias:
+                self.qkv = nn.Linear(dim, all_head_dim * 3, bias=False)
+                self.q_bias = nn.Parameter(torch.zeros(all_head_dim))
+                self.v_bias = nn.Parameter(torch.zeros(all_head_dim))
+            else:
+                self.qkv = nn.Linear(dim, all_head_dim * 3, bias=True)
+                self.q_bias = None
+                self.v_bias = None
 
         if window_size:
             self.window_size = window_size
@@ -97,7 +103,9 @@ class Attention(nn.Module):
         qkv_bias = None
         if self.q_bias is not None:
             qkv_bias = torch.cat((self.q_bias, torch.zeros_like(self.v_bias, requires_grad=False), self.v_bias))
-        qkv = F.linear(input=x, weight=self.qkv.weight, bias=qkv_bias)
+            qkv = F.linear(input=x, weight=self.qkv.weight, bias=qkv_bias)
+        else:
+            qkv = self.qkv(x)
         qkv = qkv.reshape(B, N, 3, self.num_heads, -1).permute(2, 0, 3, 1, 4)
         q, k, v = qkv[0], qkv[1], qkv[2]   # make torchscript happy (cannot use tensor as tuple)
 
@@ -128,13 +136,13 @@ class Attention(nn.Module):
 
 class Block(nn.Module):
 
-    def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False, qk_scale=None, drop=0., attn_drop=0.,
+    def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False, qv_bias=False, qk_scale=None, drop=0., attn_drop=0.,
                  drop_path=0., init_values=None, act_layer=nn.GELU, norm_layer=nn.LayerNorm,
                  window_size=None, attn_head_dim=None):
         super().__init__()
         self.norm1 = norm_layer(dim)
         self.attn = Attention(
-            dim, num_heads=num_heads, qkv_bias=qkv_bias, qk_scale=qk_scale,
+            dim, num_heads=num_heads, qkv_bias=qkv_bias, qv_bias=qv_bias, qk_scale=qk_scale,
             attn_drop=attn_drop, proj_drop=drop, window_size=window_size, attn_head_dim=attn_head_dim)
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
         self.norm2 = norm_layer(dim)
@@ -232,7 +240,7 @@ class VisionTransformer(nn.Module):
     """ Vision Transformer with support for patch or hybrid CNN input stage
     """
     def __init__(self, img_size=224, patch_size=16, in_chans=3, num_classes=1000, embed_dim=768, depth=12,
-                 num_heads=12, mlp_ratio=4., qkv_bias=False, qk_scale=None, drop_rate=0., attn_drop_rate=0.,
+                 num_heads=12, mlp_ratio=4., qkv_bias=False, qv_bias=False, qk_scale=None, drop_rate=0., attn_drop_rate=0.,
                  drop_path_rate=0., norm_layer=nn.LayerNorm, init_values=None,
                  use_abs_pos_emb=True, use_rel_pos_bias=False, use_shared_rel_pos_bias=False,
                  use_mean_pooling=True, init_scale=0.001):
@@ -263,7 +271,7 @@ class VisionTransformer(nn.Module):
         self.use_rel_pos_bias = use_rel_pos_bias
         self.blocks = nn.ModuleList([
             Block(
-                dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+                dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qv_bias=qv_bias, qk_scale=qk_scale,
                 drop=drop_rate, attn_drop=attn_drop_rate, drop_path=dpr[i], norm_layer=norm_layer,
                 init_values=init_values, window_size=self.patch_embed.patch_shape if use_rel_pos_bias else None)
             for i in range(depth)])
@@ -371,10 +379,8 @@ def vit_tiny_patch16_rpe(pretrained=False, global_pool=True, **kwargs):
         depth=12,
         num_heads=12,
         mlp_ratio=4,
-        qkv_bias=True,
         norm_layer=partial(nn.LayerNorm, eps=1e-6),
         use_mean_pooling=global_pool,
-        init_values=0.1,
         **defaults
     )
     return model

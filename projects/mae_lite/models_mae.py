@@ -175,7 +175,7 @@ class MaskedAutoencoderViT(nn.Module):
 
         return x_masked, mask, ids_restore, ids_shuffle
 
-    def forward_encoder(self, x, mask_ratio, ids_shuffle=None):
+    def forward_encoder(self, x, mask_ratio, ids_shuffle=None, decode_idx=None):
         # embed patches
         x = self.patch_embed(x)
 
@@ -191,11 +191,18 @@ class MaskedAutoencoderViT(nn.Module):
         x = torch.cat((cls_tokens, x), dim=1)
 
         # apply Transformer blocks
-        for blk in self.blocks:
-            x = blk(x)
-        x = self.norm(x)
-
-        return x, mask, ids_restore, ids_shuffle
+        for idx, blk in enumerate(self.blocks):
+            if decode_idx != None and decode_idx == idx:
+                latent = self.norm(x)
+            if decode_idx != None and idx==self.depth-1:
+                x = blk(x,return_latent=True)
+            else:
+                x = blk(x)
+        if decode_idx != None:
+            return latent, mask, ids_restore, ids_shuffle
+        else:
+            x = self.norm(x)
+            return x, mask, ids_restore, ids_shuffle
 
     def forward_decoder(self, x, ids_restore):
         # embed tokens
@@ -229,7 +236,10 @@ class MaskedAutoencoderViT(nn.Module):
         pred: [N, L, p*p*3]
         mask: [N, L], 0 is keep, 1 is remove,
         """
-        target = self.patchify(imgs)
+        if len(imgs.shape) == 4:
+            target = self.patchify(imgs)
+        else:
+            target = imgs
         if self.norm_pix_loss:
             mean = target.mean(dim=-1, keepdim=True)
             var = target.var(dim=-1, keepdim=True)
@@ -241,8 +251,8 @@ class MaskedAutoencoderViT(nn.Module):
         loss = (loss * mask).sum() / mask.sum()  # mean loss on removed patches
         return loss
 
-    def forward(self, imgs, mask_ratio=0.75, ids_shuffle=None):
-        latent, mask, ids_restore, ids_shuffle = self.forward_encoder(imgs, mask_ratio, ids_shuffle)
+    def forward(self, imgs, mask_ratio=0.75, ids_shuffle=None, decode_idx=None):
+        latent, mask, ids_restore, ids_shuffle = self.forward_encoder(imgs, mask_ratio, ids_shuffle, decode_idx=decode_idx)
         pred = self.forward_decoder(latent, ids_restore)  # [N, L, p*p*3]
         loss = self.forward_loss(imgs, pred, mask)
         return loss, pred, mask, ids_shuffle
@@ -255,6 +265,25 @@ def mae_vit_tiny_patch16(pretrained=False, **kwargs):
         patch_size=16,
         embed_dim=192,
         depth=12,
+        num_heads=12,
+        decoder_embed_dim=96,
+        decoder_depth=1,
+        decoder_num_heads=3,
+        mlp_ratio=4,
+        norm_layer=partial(nn.LayerNorm, eps=1e-6),
+        **kwargs
+    )
+    return model
+
+@register_model
+def mae_vit_tiny_d13_patch16(pretrained=False, **kwargs):
+    # the number of heads is changed to 12 from 3, which is different to the original arch.
+    # For decoupled distillation (D^2-MAE), the number of encoder layers is changed to 13 from 12 during pre-training, 
+    # but we only use the first 12 layers for downstream tasks.
+    model = MaskedAutoencoderViT(
+        patch_size=16,
+        embed_dim=192,
+        depth=13,
         num_heads=12,
         decoder_embed_dim=96,
         decoder_depth=1,

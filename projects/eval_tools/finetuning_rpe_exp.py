@@ -13,6 +13,8 @@ class Exp(BaseExp):
         self.use_abs_pos_emb = True
         self.use_rel_pos_bias = True
         self.use_shared_rel_pos_bias = False
+        self.qkv_bias = True
+        self.qv_bias = True
         self.save_folder_prefix = "ft_impr_rpe_"
 
     def get_model(self):
@@ -29,6 +31,8 @@ class Exp(BaseExp):
                 use_abs_pos_emb=self.use_abs_pos_emb,
                 use_rel_pos_bias=self.use_rel_pos_bias,
                 use_shared_rel_pos_bias=self.use_shared_rel_pos_bias,
+                qkv_bias=self.qkv_bias,
+                qv_bias=self.qv_bias,
             )
             self.model = Model(self, encoder)
         return self.model

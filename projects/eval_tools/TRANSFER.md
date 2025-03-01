@@ -8,6 +8,12 @@ Please download the pre-trained models, *e.g.*:
 
 * Download [MAE-Tiny](https://drive.google.com/file/d/1ZQYlvCPLZrJDqn2lp4GCIVL246WPqgEf/view?usp=sharing) to `<BASE_FOLDER>/checkpoints/mae_tiny_400e.pth.tar`
 
+* Download [BEiT-Tiny](https://drive.google.com/file/d/13n_hY-DEheBAnheHWUoaYLS-cuCff1vX/view?usp=sharing) to `<BASE_FOLDER>/checkpoints/beit_tiny_400e.pth.tar`
+
+* Download [BootMAE-Tiny](https://drive.google.com/file/d/11Oa9xH-6O1clrmWI5Vxyvk8DcHJ36c5P/view?usp=sharing) to `<BASE_FOLDER>/checkpoints/bootmae_tiny_400e.pth.tar`
+
+* Download [MaskFeat-Tiny](https://drive.google.com/file/d/1Zbez38J0wn4qLR-ReoE6ey4LnCA2p2i6/view?usp=sharing) to `<BASE_FOLDER>/checkpoints/maskfeat_tiny_400e.pth.tar`
+
 * Download [MoCov3-Tiny](https://drive.google.com/file/d/1RI0mU-PweAVIXs_hNOx-Xw3VRhN7w6un/view?usp=sharing) to `<BASE_FOLDER>/checkpoints/mocov3_tiny_300e.pth.tar`
 
 The datasets will be downloaded automatically.
