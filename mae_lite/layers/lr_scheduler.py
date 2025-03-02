@@ -197,6 +197,34 @@ class _StepScheduler(_Scheduler):
         gamma = self.gamma
         lr_func = partial(multistep_lr, self.lr, self.milestones, gamma)
         return lr_func
+    
+class _WarmStepScheduler(_Scheduler):
+    def __init__(self, lr, total_steps, milestones, gamma=0.1, warmup_steps=0.0, warmup_lr_start=1e-6):
+        self.milestones = milestones
+        self.gamma = gamma
+        self.warmup_steps = warmup_steps
+        self.warmup_lr_start = warmup_lr_start
+        super(_WarmStepScheduler, self).__init__(lr, total_steps)
+
+    def _get_lr_func(self):
+        def multistep_lr(lr, milestones, gamma, warmup_steps, warmup_lr_start, count):
+            """MultiStep learning rate"""
+            if count < warmup_steps:
+                lr = (lr - warmup_lr_start) * count / float(warmup_steps) + warmup_lr_start
+            else:
+                for milestone in milestones:
+                    lr *= gamma if count >= milestone else 1.0
+            return lr
+
+        gamma = self.gamma
+        lr_func = partial(multistep_lr, self.lr, self.milestones, gamma, self.warmup_steps, self.warmup_lr_start)
+        return lr_func
+
+@LRSCHEDULERS.register(name="warmmultistep")
+class WarmStepLRScheduler(LRScheduler):
+    def __init__(self, optimizer, lr, total_steps, milestones, gamma=0.1, warmup_steps=0.0, warmup_lr_start=1e-6):
+        scheduler = _WarmStepScheduler(lr, total_steps, milestones, gamma, warmup_steps, warmup_lr_start)
+        super(WarmStepLRScheduler, self).__init__(optimizer, scheduler)
 
 
 @LRSCHEDULERS.register(name="multistep")

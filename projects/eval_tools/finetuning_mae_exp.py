@@ -77,16 +77,24 @@ class Exp(BaseExp):
 
     def get_model(self):
         if "model" not in self.__dict__:
-            encoder = create_model(
-                self.encoder_arch,
-                pretrained=self.pretrained,
-                num_classes=self.num_classes,
-                drop_rate=self.drop,
-                drop_path_rate=self.drop_path,
-                attn_drop_rate=self.attn_drop_rate,
-                drop_block_rate=self.drop_block,
-                global_pool=self.global_pool,
-            )
+            if 'hiera' in self.encoder_arch:
+                encoder = create_model(
+                    self.encoder_arch,
+                    pretrained=self.pretrained,
+                    num_classes=self.num_classes,
+                    drop_path_rate=self.drop_path,
+                )
+            else:
+                encoder = create_model(
+                    self.encoder_arch,
+                    pretrained=self.pretrained,
+                    num_classes=self.num_classes,
+                    drop_rate=self.drop,
+                    drop_path_rate=self.drop_path,
+                    attn_drop_rate=self.attn_drop_rate,
+                    drop_block_rate=self.drop_block,
+                    global_pool=self.global_pool,
+                )
             self.model = Model(self, encoder)
         return self.model
 

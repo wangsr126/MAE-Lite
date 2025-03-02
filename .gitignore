@@ -70,7 +70,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# lib/
 lib64/
 parts/
 sdist/
@@ -217,3 +217,19 @@ events.out.tfevents*
 
 # vim
 .vim
+
+#tracking
+local.py
+output
+pretrained_models
+tensorboard
+
+# custom
+*.pkl
+*.pkl.json
+*.log.json
+work_dirs/
+mmseg/.mim
+data
+pretrain
+checkpoints

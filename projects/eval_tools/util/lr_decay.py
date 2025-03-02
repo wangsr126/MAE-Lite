@@ -68,6 +68,20 @@ def get_num_layer_for_vit(var_name, num_max_layer):
     else:
         return num_max_layer - 1
 
+def get_swin_layer(name, num_layers, depths):
+    if name in ("mask_token"):
+        return 0
+    elif name.startswith("patch_embed"):
+        return 0
+    elif name.startswith("layers"):
+        layer_id = int(name.split('.')[1])
+        block_id = name.split('.')[3]
+        if block_id == 'reduction' or block_id == 'norm':
+            return sum(depths[:layer_id + 1])
+        layer_id = sum(depths[:layer_id]) + int(block_id)
+        return layer_id + 1
+    else:
+        return num_layers - 1
 
 class LayerDecayValueAssigner(object):
     def __init__(self, values):
@@ -79,15 +93,37 @@ class LayerDecayValueAssigner(object):
     def get_layer_id(self, var_name):
         return get_num_layer_for_vit(var_name, len(self.values))
 
+class LayerDecayValueAssigner_swin(object):
+    def __init__(self, values, depths):
+        self.values = values
+        self.depths = depths
+
+    def get_scale(self, layer_id):
+        return self.values[layer_id]
+
+    def get_layer_id(self, var_name):
+        return get_swin_layer(var_name, sum(self.depths), self.depths)
+
+def check_keywords_in_name(name, keywords=()):
+    isin = False
+    for keyword in keywords:
+        if keyword in name:
+            isin = True
+    return isin
+
 
 def get_parameter_groups(model, weight_decay=1e-5, skip_list=(), get_num_layer=None, get_layer_scale=None):
     parameter_group_names = {}
     parameter_group_vars = {}
+    skip_keywords = {}
+    if hasattr(model, 'no_weight_decay_keywords'):
+        skip_keywords = model.no_weight_decay_keywords()
 
     for name, param in model.named_parameters():
         if not param.requires_grad:
             continue  # frozen weights
-        if len(param.shape) == 1 or name.endswith(".bias") or name in skip_list:
+        if len(param.shape) == 1 or name.endswith(".bias") or name in skip_list or \
+                check_keywords_in_name(name, skip_keywords):
             group_name = "no_decay"
             this_weight_decay = 0.0
         else:

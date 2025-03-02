@@ -31,7 +31,7 @@ class Attention(BaseAttn):
         super(Attention, self).__init__(*args, **kwargs)
         self.identity = nn.Identity()
 
-    def forward(self, x):
+    def forward(self, x, return_latent=False):
         B, N, C = x.shape
         qkv = self.qkv(x)
         qkv = qkv.reshape(B, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
@@ -39,6 +39,8 @@ class Attention(BaseAttn):
 
         attn = (q @ k.transpose(-2, -1)) * self.scale
         attn = self.identity(attn)  # used for get attention map for visualization and distillation via forward hook
+        if return_latent:
+            return
         attn = attn.softmax(dim=-1)
         attn = self.attn_drop(attn)
 
@@ -70,7 +72,10 @@ class Block(nn.Module):
         mlp_hidden_dim = int(dim * mlp_ratio)
         self.mlp = Mlp(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
 
-    def forward(self, x):
+    def forward(self, x, return_latent=False):
+        if return_latent:
+            x = self.attn(self.norm1(x), return_latent=return_latent)
+            return x
         x = x + self.drop_path(self.attn(self.norm1(x)))
         x = x + self.drop_path(self.mlp(self.norm2(x)))
         return x
